@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <title>My To-Do App</title>
+  </head>
+  <body>
+    <h1>My To-Do List</h1>
+
+    <input id="newTodo" placeholder="What do you need to do?" />
+    <button onclick="addTodo()">Add</button>
+
+    <ul id="list"></ul>
+
+    <script>
+      // READ: get all to-dos from the server and show them
+      async function loadTodos() {
+        const res = await fetch("/todos");
+        const todos = await res.json();
+        const list = document.getElementById("list");
+        list.innerHTML = "";
+        todos.forEach((todo) => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+          <input type="checkbox" ${todo.done ? "checked" : ""}
+                 onchange="toggleTodo(${todo.id}, this.checked)">
+          ${todo.title}
+          <button onclick="deleteTodo(${todo.id})">Delete</button>
+        `;
+          list.appendChild(li);
+        });
+      }
+
+      // CREATE: send a new to-do to the server
+      async function addTodo() {
+        const input = document.getElementById("newTodo");
+        if (!input.value) return;
+        await fetch("/todos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: input.value }),
+        });
+        input.value = "";
+        loadTodos();
+      }
+
+      // UPDATE: mark a to-do as done or not done
+      async function toggleTodo(id, done) {
+        await fetch("/todos/" + id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ done: done ? 1 : 0 }),
+        });
+      }
+
+      // DELETE: remove a to-do
+      async function deleteTodo(id) {
+        await fetch("/todos/" + id, { method: "DELETE" });
+        loadTodos();
+      }
+
+      loadTodos();
+    </script>
+  </body>
+</html>
